@@ -27,7 +27,6 @@ def detail_img(page_url,ul_a_name_path):
 
 
 
-
 def detail_page_url(ul_a_href_list,ul_a_name_path):  # page详情页的url
     '''获得每一页的url'''
     html_text = requests.get(ul_a_href_list).text  # 获取文本内容
