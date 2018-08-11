@@ -7,33 +7,52 @@ import re
 import requests
 
 
-def total_img(url_href,img_url_path):
+def total_img(a_href_url,img_url_path):
     '''所有的图片'''
+    html_text = requests.get(a_href_url).text
+    soup = BeautifulSoup(html_text, 'lxml')
+    try:
+        img_src=soup.find('div',class_='dowm_arc').find_all('img')  # 得到img标签
+        # https://up.enterdesk.com/edpic_source/21/c0/b5/21c0b59aa2d3d42a7508cf9581c4e1a0.jpg
+        img_src=img_src[0]['src']
+        print(img_src)
+        file_name=img_src.split('/')[-1]   # 21c0b59aa2d3d42a7508cf9581c4e1a0.jpg  得到名字
+        file_name_path=os.path.join(img_url_path,file_name)
+
+        with open(file_name_path,'wb') as f:
+            get_img=requests.get(img_src).content
+            f.write(get_img)
+    except Exception as e:
+        print(e)
+
+
+
+def high_img_url(url_href,img_url_path):
+    '''得到每一页原图高清url'''
     html_text = requests.get(url_href).text
     soup = BeautifulSoup(html_text, 'lxml')
-    img_src=soup.select('.arc_main_pic_img')[0]['src']  # 图片地址
-    print(img_src)
-    file_name=img_src.split('/')[-1]   # 21c0b59aa2d3d42a7508cf9581c4e1a0.jpg  得到名字
-    file_name_path=os.path.join(img_url_path,file_name)
-
-    with open(file_name_path,'wb') as f:
-        get_img=requests.get(img_src).content
-        f.write(get_img)
-
-
+    try:
+        url=soup.find('div',class_='images_contrl').find_all('a') # 得到a标签
+        a_href_url='https:'+url[0].get('href')   # //www.enterdesk.com/download/31978-198723/
+        total_img(a_href_url, img_url_path)
+    except Exception as e:
+        print(e)
 
 
 def secondary_page_url(img_url_href,img_url_path):
     '''次目录下，每一页的url'''
     html_text=requests.get(img_url_href).text
     soup=BeautifulSoup(html_text,'lxml')
-    page_max=soup.find('div',class_='arc_pandn').find('div',class_='swiper-wrapper').find_all('a') # 得到所有的a标签
-    img_url_href='/'.join(img_url_href.split('/')[0:3])  # https://mm.enterdesk.com
-    # print(img_url_href)
-    for page_href in page_max:
-        # https://mm.enterdesk.com/bizhi/31978-198724.html
-        url_href=img_url_href+page_href.get('href')  # 得到每张图片的href链接
-        total_img(url_href,img_url_path)
+    try:
+        page_max=soup.find('div',class_='arc_pandn').find('div',class_='swiper-wrapper').find_all('a') # 得到所有的a标签
+        img_url_href='/'.join(img_url_href.split('/')[0:3])  # https://mm.enterdesk.com
+        # print(img_url_href)
+        for page_href in page_max:
+            # https://mm.enterdesk.com/bizhi/31978-198724.html
+            url_href=img_url_href+page_href.get('href')  # 得到每张图片的href链接
+            high_img_url(url_href,img_url_path)
+    except Exception as e:
+        print(e)
 
 
 
@@ -49,6 +68,7 @@ def secondary_catalog_url(page_url,url_catalog_path):
         # print(img_url_href)
         img_url_path=os.path.join(url_catalog_path,img_url_name)
         os.makedirs(img_url_path,exist_ok=True)
+        print(img_url_name)
         secondary_page_url(img_url_href,img_url_path)
 
 
@@ -66,14 +86,15 @@ def primary_page_url(url_catalog_href,url_catalog_path):
     # 拼接
     x1 = '/'.join(url_catalog_href.split('/')[0:4])        # https://www.enterdesk.com/search
     x2 = (url_catalog_href.split('/')[-2].split('-')[0])   # 2-45-6-0-1920x1080-0  第一个数字
-    for i in range(1,int(detail_page_max)+1):
+    for i in range(3,int(detail_page_max)+1):
         x3 = (url_catalog_href.split('/')[-2].split('-')[1::1])  # ['45', '6', '0', '1920x1080', '0']
         x2=f'{i}'
         x3.insert(0,x2)  # list插入到第一个位置
         x3='-'.join(x3)  # 拼接
         page_url=x1+'/'+x3   # 得到url
         url_catalog_path1=os.path.join(url_catalog_path,str(i))
-        os.makedirs(url_catalog_path1)
+        os.makedirs(url_catalog_path1,exist_ok=True)
+        print(f'第{i}页')
         secondary_catalog_url(page_url, url_catalog_path1)
 
 
@@ -82,7 +103,7 @@ def primary_catalog_url(url,path):
     '''获得主页中，每个大目录下的url'''
     html_text=requests.get(url).text
     soup=BeautifulSoup(html_text,'lxml')
-    url_catalog_list=soup.select('.list_sel_box ul a')[2:9] # 得到目录下的a标签
+    url_catalog_list=soup.select('.list_sel_box ul a')[8:9] # 得到目录下的a标签
     os.makedirs(path,exist_ok=True)
     for url_catalog_href_list in url_catalog_list:
         url_catalog_href=url_catalog_href_list.get('href')  #  得到url  /search/1-45-6-0-1920x1080-0/
@@ -97,7 +118,7 @@ def primary_catalog_url(url,path):
 
 def main():
     url='https://www.enterdesk.com/search/1-26-6-0-1920x1080-0/'
-    path='bizhi01'
+    path='bizhi03'
     primary_catalog_url(url,path)
 
 
