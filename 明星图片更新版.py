@@ -2,7 +2,7 @@
 # http://www.mm131.com/mingxing
 
 import os
-
+from multiprocessing import Pool  # 多进程
 import requests
 from bs4 import BeautifulSoup
 
@@ -66,8 +66,15 @@ def total_index(url,path):
     a_href_list=list(set(['{}/{}'.format(url,i.attrs['href']) for i in a_page_list]))
     a_href_list.append(url)  # 添加第一页
     os.makedirs(path, exist_ok=True)
+    pool=Pool()  # 实例化
     for page_url in a_href_list:
-        index_page_url(page_url,path)
+        # index_page_url(page_url,path)
+        pool.apply_async(index_page_url,(page_url,path)) # 第一个参数是函数名  对象 ，第二个是参数
+    pool.close() # 关掉进程
+    pool.join()   # 等待执行完成
+    print('下载完成')
+
+
 
 
 def main():
