@@ -118,6 +118,7 @@ def parse_page_detail(html):
     image_list=[i.get('url') for i in js_obj['sub_images']]   # 得到图片所有的链接
     return image_list
 
+
 def download_image(image_list,detail_name):
     for image_url in image_list:
         print(image_url)
